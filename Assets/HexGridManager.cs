@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
-
 
 public class HexGridManager : MonoBehaviour
 {
@@ -39,14 +39,7 @@ public class HexGridManager : MonoBehaviour
             }
         }
 
-        // Reset Reset
-        if (Input.GetKeyDown(KeyCode.R))
-        { 
-            foreach (var pair in hexMap) 
-            {   
-                    pair.Value.ResetTile();
-            }
-        }
+        if (Input.GetKeyDown(KeyCode.R)) {ResetTiles();}
     }
 
     public void GenerateGrid()
@@ -68,6 +61,7 @@ public class HexGridManager : MonoBehaviour
 
                 tile.ResetTile();
                 tile.axialCoord = axialCoord;
+                tile.isValid = true;
 
                 hexMap[axialCoord] = tile;
             }
@@ -91,9 +85,12 @@ public class HexGridManager : MonoBehaviour
         }
     }
 
-    // Input Start and End HexTiles to get A* path
+    // Input Start and End HexTiles 
+    // Get A* path
     public List<HexTile> FindPath(HexTile startTile, HexTile endTile)
     {
+        if (!endTile.isValid) {return null;}
+
         List<HexTile> toSearch = new List<HexTile>() {startTile};
         List<HexTile> processed = new List<HexTile>();
 
@@ -116,7 +113,7 @@ public class HexGridManager : MonoBehaviour
 
                 while (currentPathTile != startTile){
                     path.Add(currentPathTile);
-                    currentPathTile.SetColor(Color.green);
+                    // currentPathTile.SetColor(Color.green);
                     currentPathTile = currentPathTile.previousHextile;
                 }
 
@@ -145,19 +142,22 @@ public class HexGridManager : MonoBehaviour
         return null;
     }
 
-    // Input Axial Coordinates to get world location
+    // Input Axial Coordinates 
+    // Get corresponding world location
     Vector3 AxialToWorld(Vector2Int axial){
         float x = hexSize * Mathf.Sqrt(3f) * (axial.x + axial.y / 2f);
         float z = hexSize * 1.5f * axial.y;
         return new Vector3(x, 0, z);
     }
 
-    // Input Axial Coordinates to get specific tile
+    // Input Axial Coordinates 
+    // Get corresponding tile
     public HexTile GetTileAt(Vector2Int coord){
         return hexMap.TryGetValue(coord, out HexTile tile) ? tile : null;
     }
 
-    // Input Starting tile and a range to get all hexes within that range
+    // Input Starting tile and a range
+    // Get all hexes within that range
     public List<HexTile> GetTilesInRange(HexTile tile, int range){
         
         List<HexTile> result = new List<HexTile>();
@@ -178,4 +178,46 @@ public class HexGridManager : MonoBehaviour
         return result;
     }
 
+    // Input Starting tile, end tile and a range 
+    // Get all hexes within a cone in that direction range
+
+    public List<HexTile> GetConeFromTo(HexTile startTile, HexTile endTile, int range, float coneAngleDegrees)
+    {
+        if (startTile == endTile) {return null;}
+        
+        List<HexTile> coneTiles = new List<HexTile>();
+        List<HexTile> inRange = GetTilesInRange(startTile, range);
+
+        Vector3 startPos = AxialToWorld(startTile.axialCoord);
+        Vector3 endPos = AxialToWorld(endTile.axialCoord);
+        Vector3 forwardDir = (endPos - startPos).normalized;
+
+        float halfAngle = coneAngleDegrees / 2f;
+
+        foreach (HexTile tile in inRange)
+        {
+            if (tile == startTile) continue;
+
+            Vector3 tilePos = AxialToWorld(tile.axialCoord);
+            Vector3 dirToTile = (tilePos - startPos).normalized;
+
+            float angle = Vector3.Angle(forwardDir, dirToTile);
+
+            if (angle <= halfAngle)
+            {
+                coneTiles.Add(tile);
+            }
+        }
+
+        return coneTiles;
+    }
+
+    // Reset Pathfinding Value and Color
+    public void ResetTiles()
+    {
+        foreach (var pair in hexMap) 
+        {   
+                pair.Value.ResetTile();
+        }
+    }
 }

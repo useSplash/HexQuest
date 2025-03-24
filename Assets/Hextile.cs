@@ -27,7 +27,7 @@ public class HexTile : MonoBehaviour
 
     public void SetColor(Color color)
     {
-        GetComponent<MeshRenderer>().material.color = color;
+        if (isValid) GetComponent<MeshRenderer>().material.color = color;
     }
     public void SetHCost(int cost = 0)
     {
@@ -60,8 +60,7 @@ public class HexTile : MonoBehaviour
         fCostText.text = "";
 
         previousHextile = null;
-        isValid = true;
-
+        
         SetColor(Color.white);
     }
 

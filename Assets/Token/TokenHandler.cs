@@ -22,7 +22,7 @@ public class TokenHandler : MonoBehaviour
         for (int i = path.Count-1; i >= 0; i--)
         {
             SnapToHex(path[i]);
-            yield return new WaitForSeconds(1.0f);
+            yield return new WaitForSeconds(0.5f);
         }
     }
 }
